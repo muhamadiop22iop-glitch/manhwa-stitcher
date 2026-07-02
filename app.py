@@ -327,13 +327,19 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
         st.success("تەواو! بەشەکە بە سەرکەوتوویی ئامادەکرا.")
         st.download_button(label="📥 داگرتنی بەشەکە (ZIP)", data=final_zip_buffer.getvalue(), file_name="manga_chapter.zip", mime="application/zip")
 
-    # ٢. مۆدی بە کۆمەڵ (Batch Processing) - بۆ مانهوا یان مانگا پێکەوە
+   # ٢. مۆدی بە کۆمەڵ (Batch Processing) - بۆ مانهوا یان مانگا پێکەوە
     elif input_mode == "فایلی ZIP پێکەوە (چەندین بەش پێکەوە - Batch)" and uploaded_zip:
         with zipfile.ZipFile(uploaded_zip, "r") as in_zip:
             chapters_dict = {}
             for file_path in in_zip.namelist():
+                # فلتەرکردنی فۆڵدەرەکان و فایلە شاردراوەکانی سیستەم
                 if file_path.endswith('/') or '__MACOSX' in file_path or file_path.startswith('.'):
                     continue
+                
+                # 🛑 چارەسەری سەرەکی: دڵنیابوونەوە لەوەی فایلەکە بە ڕاستی وێنەیە
+                if not file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    continue
+                
                 parts = file_path.split('/')
                 ch_name = parts[-2] if len(parts) > 1 else "General_Pages"
                 if ch_name not in chapters_dict:
@@ -352,7 +358,11 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                         images = []
                         for path in sorted_paths:
                             with in_zip.open(path) as f:
-                                images.append(Image.open(io.BytesIO(f.read())))
+                                # خوێندنەوەی بێ کێشەی وێنەکە بۆ ناو میمۆری
+                                img_data = io.BytesIO(f.read())
+                                img = Image.open(img_data)
+                                img.load()  
+                                images.append(img)
                         
                         output_parts, _ = process_single_chapter(
                             images, max_split_height, output_format, jpeg_quality, 
@@ -373,4 +383,4 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                 st.success("هەموو بەشەکان بە سەرکەوتوویی ڕێکخران!")
                 st.download_button(label="📥 داگرتنی هەموو بەشەکان (Batch ZIP)", data=final_zip_buffer.getvalue(), file_name="kurdsubtitle_manga_batch.zip", mime="application/zip")
             else:
-                st.error("هیچ فۆڵدەرێکی دروست لەناو فایلی زپەکەدا نەدۆزرایەوە.")
+                st.error("هیچ فۆڵدەر یان وێنەیەکی دروست لەناو فایلی زپەکەدا نەدۆزرایەوە.")
