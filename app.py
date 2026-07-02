@@ -7,10 +7,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image, ImageDraw
 
-# ١. ڕێکخستنی لاپەڕەی وێبەکە
 st.set_page_config(page_title="Kurdsubtitle Manga & Manhwa Toolkit", page_icon="📜", layout="centered")
 
-# ٢. ستایلێکی کوردی و مۆدێرن بۆ ڕووکاری سایتەکە
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: white; }
@@ -29,22 +27,18 @@ def find_smart_split_row(img_np, target_y, search_range=300):
     height, width, _ = img_np.shape
     start_y = max(0, target_y - search_range)
     end_y = min(height - 1, target_y + search_range)
-    
     best_row = target_y
     min_variance = float('inf')
     
     for y in range(start_y, end_y):
         row = img_np[y, :, :3]
         mean_color = np.mean(row, axis=0)
-        
         if np.all(mean_color > 240) or np.all(mean_color < 15):
             return y
-            
         variance = np.var(row)
         if variance < min_variance:
             min_variance = variance
             best_row = y
-            
     return best_row
 
 def apply_watermark(base_img, watermark_img, count=1):
@@ -52,7 +46,6 @@ def apply_watermark(base_img, watermark_img, count=1):
     wm_w = max(40, int(base_w * 0.12))
     wm_h = int(watermark_img.height * (wm_w / watermark_img.width))
     wm_resized = watermark_img.resize((wm_w, wm_h), Image.Resampling.LANCZOS)
-    
     img_copy = base_img.copy()
     
     if count == 1:
@@ -68,19 +61,16 @@ def apply_watermark(base_img, watermark_img, count=1):
                 paste_y = int(20 + (base_h - wm_h - 40) * (i / (count - 1)))
             else:
                 paste_y = (base_h - wm_h) // 2
-                
             if i % 3 == 0:
                 paste_x = 20
             elif i % 3 == 1:
                 paste_x = (base_w - wm_w) // 2
             else:
                 paste_x = base_w - wm_w - 20
-                
             if wm_resized.mode == 'RGBA':
                 img_copy.paste(wm_resized, (paste_x, paste_y), wm_resized)
             else:
                 img_copy.paste(wm_resized, (paste_x, paste_y))
-                
     return img_copy
 
 def process_single_chapter(images, max_split_height, output_format, jpeg_quality, no_crop, enable_watermark, watermark_image, watermark_count, mode_2in1, credit_image, is_manga_mode, watermark_distribution):
@@ -106,7 +96,6 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
             
         if credit_image:
             output_parts.append(credit_image.copy())
-            
         return output_parts, []
 
     if credit_image:
@@ -128,27 +117,21 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
             pair = resized_images[i:i+2]
             pair_w = target_width
             pair_h = sum(img.height for img in pair)
-            
             img_mode = "RGB" if output_format in ["JPEG", "JPG"] else "RGBA"
             combined_pair = Image.new(img_mode, (pair_w, pair_h))
-            
             curr_y = 0
             for img in pair:
                 combined_pair.paste(img, (0, curr_y))
                 curr_y += img.height
-                
             combined_pair = combined_pair.resize((pair_w, max_split_height), Image.Resampling.LANCZOS)
-            
             if enable_watermark and watermark_image:
                 combined_pair = apply_watermark(combined_pair, watermark_image, watermark_count)
-                
             paired_outputs.append(combined_pair)
         return paired_outputs, []
 
     total_height = sum(img.height for img in resized_images)
     img_mode = "RGB" if output_format in ["JPEG", "JPG"] else "RGBA"
     stitched_image = Image.new(img_mode, (target_width, total_height))
-    
     current_y = 0
     for img in resized_images:
         stitched_image.paste(img, (0, current_y))
@@ -172,7 +155,6 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
             end_y = find_smart_split_row(img_np, estimated_end_y)
             if total_height - end_y < 500:
                 end_y = total_height
-                
         steps.append((start_y, end_y))
         start_y = end_y
 
@@ -180,22 +162,18 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
     for s_y, e_y in steps:
         crop_box = (0, s_y, target_width, e_y)
         cropped_part = stitched_image.crop(crop_box)
-        
         if enable_watermark and watermark_image:
             cropped_part = apply_watermark(cropped_part, watermark_image, watermark_count)
-            
         output_parts.append(cropped_part)
-        
     return output_parts, steps
 
-# نیشاندانی لۆگۆ ئەگەر بوونی هەبێت
 if os.path.exists("logo_black.png"):
     col_empty, col_logo = st.columns([3, 1])
     with col_logo:
         st.image("logo_black.png", use_container_width=True)
 
-st.title("📜 ئامرازی لکاندن و لۆگۆ لێدانی مانهوا و مانگا Pro")
-st.write("وەشانی نوێ: پشتگیری مۆدی مانگا (پاراستنی لاپەڕەکان + لۆگۆی هەڕەمەکی) بۆ یەک بەش یان بە کۆمەڵ (Batch).")
+st.title("📜 ئامرازی لکاندن و لۆگۆ لێدانی manceva و مانگا Pro")
+st.write("وەشانی نوێ: پشتگیری مۆدی مانگا بۆ یەک بەش یان بە کۆمەڵ.")
 
 input_mode = st.radio("شێوازی داخڵکردنی فایلەکان هەڵبژێرە:", ["وێنە بە جیا (تەنها یەک بەش)", "فایلی ZIP پێکەوە (چەندین بەش پێکەوە - Batch)"], horizontal=True)
 
@@ -205,7 +183,7 @@ uploaded_zip = None
 if input_mode == "وێنە بە جیا (تەنها یەک بەش)":
     uploaded_files = st.file_uploader("وێنەکان دەستنیشان بکە...", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
 else:
-    uploaded_zip = st.file_uploader("فایلی ZIPی سەرەکی ئەپڵۆد بکە (کە فۆڵدەری بەشەکانی تێدایە)...", type=["zip"])
+    uploaded_zip = st.file_uploader("فایلی ZIPی سەرەکی ئەپڵۆد بکە...", type=["zip"])
 
 st.write("---")
 st.subheader("⚙️ ڕێکخستنەکانی جۆری پڕۆژە")
@@ -273,19 +251,18 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
     ext = "jpg" if output_format in ["JPEG", "JPG"] else "png"
     final_zip_buffer = io.BytesIO()
     
-    # مۆدی یەکەم: وێنەی جیاواز
     if input_mode == "وێنە بە جیا (تەنها یەک بەش)" and uploaded_files:
         sorted_files = sorted(uploaded_files, key=lambda x: natural_sort_key(x.name))
         chapter_images = [Image.open(f) for f in sorted_files]
         
-        with st.spinner("خەریکە پڕۆسێس دەکرێت..."):
+        with st.spinner("Processing..."):
             output_parts, steps = process_single_chapter(
                 chapter_images, max_split_height, output_format, jpeg_quality, 
                 no_crop, enable_watermark, watermark_image, watermark_count, mode_2in1, credit_image,
                 is_manga_mode, watermark_distribution
             )
             
-            with zipfile.ZipFile(final_zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            with zipfile.ZipFile(final_zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                 for idx, part in enumerate(output_parts):
                     img_byte_arr = io.BytesIO()
                     if save_format == "JPEG":
@@ -305,22 +282,19 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                 for _, e_y in steps[:-1]:
                     scaled_y = int(e_y * (preview_h / total_h))
                     draw.line([(0, scaled_y), (preview_w, scaled_y)], fill="red", width=2)
-                st.image(preview_img, caption="شوێنی بڕینەکان")
+                st.image(preview_img, caption="Crop Lines")
 
         st.success("تەواو! بەشەکە بە سەرکەوتوویی ئامادەکرا.")
         st.download_button(label="📥 داگرتنی بەشەکە (ZIP)", data=final_zip_buffer.getvalue(), file_name="manga_chapter.zip", mime="application/zip")
 
-    # مۆدی دووەم: بە کۆمەڵ (Batch Processing)
     elif input_mode == "فایلی ZIP پێکەوە (چەندین بەش پێکەوە - Batch)" and uploaded_zip:
         with zipfile.ZipFile(uploaded_zip, "r") as in_zip:
             chapters_dict = {}
             for file_path in in_zip.namelist():
                 if file_path.endswith('/') or '__MACOSX' in file_path or file_path.startswith('.'):
                     continue
-                
                 if not file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
                     continue
-                    
                 parts = file_path.split('/')
                 ch_name = parts[-2] if len(parts) > 1 else "General_Pages"
                 if ch_name not in chapters_dict:
@@ -331,11 +305,10 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                 progress_bar = st.progress(0.0)
                 ch_keys = list(chapters_dict.keys())
                 
-                with zipfile.ZipFile(final_zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as out_zip:
+                with zipfile.ZipFile(final_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
                     for ch_idx, ch_name in enumerate(ch_keys):
-                        st.write(f"خەریکە بەشی: `{ch_name}` پڕۆسێس دەکرێت...")
+                        st.write(f"Processing: `{ch_name}` ...")
                         sorted_paths = sorted(chapters_dict[ch_name], key=natural_sort_key)
-                        
                         images = []
                         for path in sorted_paths:
                             with in_zip.open(path) as f:
@@ -357,10 +330,9 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                             else:
                                 part.save(img_byte_arr, format=save_format)
                             out_zip.writestr(f"{ch_name}/{file_prefix}_{idx+1:02d}.{ext}", img_byte_arr.getvalue())
-                            
                         progress_bar.progress((ch_idx + 1) / len(ch_keys))
                 
                 st.success("هەموو بەشەکان بە سەرکەوتوویی ڕێکخران!")
                 st.download_button(label="📥 داگرتنی هەموو بەشەکان (Batch ZIP)", data=final_zip_buffer.getvalue(), file_name="kurdsubtitle_manga_batch.zip", mime="application/zip")
             else:
-                st.error("هیچ فۆڵدەر یان وێنەیەکی دروست لەناو فایلی زپەکەدا نەدۆزرایەوە.")
+                st.error("No valid images found.")
