@@ -7,10 +7,10 @@ import numpy as np
 import streamlit as st
 from PIL import Image, ImageDraw
 
-# ڕێکخستنی لاپەڕەی وێبەکە
+# ١. ڕێکخستنی لاپەڕەی وێبەکە
 st.set_page_config(page_title="Kurdsubtitle Manga & Manhwa Toolkit", page_icon="📜", layout="centered")
 
-# ستایلێکی کوردی و مۆدێرن بۆ وێبسایتەکە
+# ٢. ستایلێکی کوردی و مۆدێرن بۆ ڕووکاری سایتەکە
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: white; }
@@ -84,18 +84,15 @@ def apply_watermark(base_img, watermark_img, count=1):
     return img_copy
 
 def process_single_chapter(images, max_split_height, output_format, jpeg_quality, no_crop, enable_watermark, watermark_image, watermark_count, mode_2in1, credit_image, is_manga_mode, watermark_distribution):
-    """پڕۆسێس کردنی یەک لیست لە وێنەکان (بۆ مانهوا یان مانگا)"""
     num_pages = len(images)
     
-    # --- بەشی نوێ: ئەگەر مۆدی مانگا هەڵبژێردرابوو (بێ دەمج و بڕین، تەنها لۆگۆ) ---
     if is_manga_mode:
-        # دیاریکردنی ئەو لاپەڕانەی کە لۆگۆیان لێدەدرێت بەپێی ویستی بەکارهێنەر
         if enable_watermark and watermark_image:
             if watermark_distribution == "لەسەر ١٠ لاپەڕە بە هەڕەمەکی":
                 wm_indices = set(random.sample(range(num_pages), min(10, num_pages)))
             elif watermark_distribution == "لەسەر ٢٠ لاپەڕە بە هەڕەمەکی":
                 wm_indices = set(random.sample(range(num_pages), min(20, num_pages)))
-            else:  # لەسەر هەموو لاپەڕەکان
+            else:
                 wm_indices = set(range(num_pages))
         else:
             wm_indices = set()
@@ -103,18 +100,15 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
         output_parts = []
         for idx, img in enumerate(images):
             img_copy = img.copy()
-            # لۆگۆ لێدان ئەگەر ئەپڵۆد کرابوو و ناوی لە لیستی لاپەڕە هەڵبژێردراوەکاندا بوو
             if idx in wm_indices:
                 img_copy = apply_watermark(img_copy, watermark_image, watermark_count)
             output_parts.append(img_copy)
             
-        # زیادکردنی لاپەڕەی کرێدیت لە کۆتایی ئەگەر هەبێت
         if credit_image:
             output_parts.append(credit_image.copy())
             
         return output_parts, []
 
-    # --- مۆدەکانی مانهوا (لکاندنی گشتی و ڕێکخستنی قەبارە) ---
     if credit_image:
         images.append(credit_image.copy())
         
@@ -128,7 +122,6 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
             img = img.resize((target_width, new_height), Image.Resampling.LANCZOS)
         resized_images.append(img)
 
-    # مۆدی دوو لەیەک (2-in-1)
     if mode_2in1:
         paired_outputs = []
         for i in range(0, len(resized_images), 2):
@@ -152,7 +145,6 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
             paired_outputs.append(combined_pair)
         return paired_outputs, []
 
-    # پڕۆسەی ئاسایی مانهوا
     total_height = sum(img.height for img in resized_images)
     img_mode = "RGB" if output_format in ["JPEG", "JPG"] else "RGBA"
     stitched_image = Image.new(img_mode, (target_width, total_height))
@@ -168,7 +160,6 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
             final_img = apply_watermark(final_img, watermark_image, watermark_count)
         return [final_img], []
 
-    # بڕینی زیرەک بۆ مانهوا
     img_np = np.array(stitched_image)
     start_y = 0
     steps = []
@@ -197,7 +188,7 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
         
     return output_parts, steps
 
-# نمایشکردنی لۆگۆ لە ڕووکاری سایتەکە
+# نیشاندانی لۆگۆ ئەگەر بوونی هەبێت
 if os.path.exists("logo_black.png"):
     col_empty, col_logo = st.columns([3, 1])
     with col_logo:
@@ -206,7 +197,6 @@ if os.path.exists("logo_black.png"):
 st.title("📜 ئامرازی لکاندن و لۆگۆ لێدانی مانهوا و مانگا Pro")
 st.write("وەشانی نوێ: پشتگیری مۆدی مانگا (پاراستنی لاپەڕەکان + لۆگۆی هەڕەمەکی) بۆ یەک بەش یان بە کۆمەڵ (Batch).")
 
-# جۆری داخڵکردن
 input_mode = st.radio("شێوازی داخڵکردنی فایلەکان هەڵبژێرە:", ["وێنە بە جیا (تەنها یەک بەش)", "فایلی ZIP پێکەوە (چەندین بەش پێکەوە - Batch)"], horizontal=True)
 
 uploaded_files = None
@@ -220,7 +210,6 @@ else:
 st.write("---")
 st.subheader("⚙️ ڕێکخستنەکانی جۆری پڕۆژە")
 
-# لێرەدا بژاردەی مانگا زیادکراوە
 mode_selection = st.selectbox("شێوازی کارکردن (مۆدی پڕۆژە):", [
     "بڕینی زیرەک (Smart Split) - بۆ مانهوا", 
     "دوو لاپەڕە لە یەک لاپەڕەدا (2-in-1) - بۆ مانهوا", 
@@ -236,7 +225,6 @@ col1, col2 = st.columns(2)
 with col1:
     output_format = st.selectbox("فۆرماتی وێنە دەرچووەکان:", ["JPEG", "JPG", "PNG"])
 with col2:
-    # بەرزی تەنها بۆ مۆدەکانی مانهوا گرنگە، بۆ مانگا ناچالاک دەبێت
     max_split_height = st.number_input("بەرزی لاپەڕەکانی مانهوا (پێکسڵ):", min_value=1000, max_value=10000, value=3000, disabled=is_manga_mode)
 
 jpeg_quality = 90
@@ -245,7 +233,6 @@ if output_format in ["JPEG", "JPG"]:
 
 file_prefix = st.text_input("پێشگری ناوی فایلەکان:", value="page")
 
-# --- بەشی واتەرمارک لەگەڵ نوێکارییەکەی مانگا ---
 st.write("---")
 st.subheader("🛡️ ڕێکخستنی واتەرمارک (Watermark)")
 enable_watermark = st.checkbox("زیادکردنی لۆگۆی کوردسەب وەک واتەرمارک بۆ سەر لاپەڕەکان", value=False)
@@ -261,7 +248,6 @@ if enable_watermark:
     with col_wm2:
         watermark_count = st.slider("ژمارەی دووبارەبوونەوەی لۆگۆ لەسەر *هەر یەک* لاپەڕە:", 1, 10, 1)
         
-    # ئەگەر مۆدی مانگا بوو، ئۆپشنی دابەشکردنی لۆگۆ بە هەڕەمەکی پیشان بدە
     if is_manga_mode:
         watermark_distribution = st.radio(
             "شێوازی بڵاوبوونەوەی لۆگۆ لەناو بەشەکەدا (تایبەت بە مانگا):",
@@ -278,18 +264,16 @@ if enable_watermark:
         if uploaded_wm:
             watermark_image = Image.open(uploaded_wm)
 
-# خوێندنەوەی لاپەڕەی کرێدیت
 credit_image = None
 if os.path.exists("credit_page.png"):
     credit_image = Image.open("credit_page.png")
 
-# --- جێبەجێکردنی کارەکە ---
 if st.button("🚀 دەستپێکردنی پڕۆسە"):
     save_format = "JPEG" if output_format in ["JPEG", "JPG"] else "PNG"
     ext = "jpg" if output_format in ["JPEG", "JPG"] else "png"
     final_zip_buffer = io.BytesIO()
     
-    # ١. مۆدی یەک بەش (وێنەی جیاواز)
+    # مۆدی یەکەم: وێنەی جیاواز
     if input_mode == "وێنە بە جیا (تەنها یەک بەش)" and uploaded_files:
         sorted_files = sorted(uploaded_files, key=lambda x: natural_sort_key(x.name))
         chapter_images = [Image.open(f) for f in sorted_files]
@@ -310,7 +294,6 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                         part.save(img_byte_arr, format=save_format)
                     zip_file.writestr(f"{file_prefix}_{idx+1:02d}.{ext}", img_byte_arr.getvalue())
             
-            # پێشبینی هێڵەکان (تەنها بۆ مانهوا و بڕینی زیرەک)
             if steps and len(chapter_images) > 0 and not is_manga_mode:
                 st.write("---")
                 st.subheader("📊 پێشبینی هێڵەکانی بڕین:")
@@ -327,19 +310,17 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
         st.success("تەواو! بەشەکە بە سەرکەوتوویی ئامادەکرا.")
         st.download_button(label="📥 داگرتنی بەشەکە (ZIP)", data=final_zip_buffer.getvalue(), file_name="manga_chapter.zip", mime="application/zip")
 
-   # ٢. مۆدی بە کۆمەڵ (Batch Processing) - بۆ مانهوا یان مانگا پێکەوە
+    # مۆدی دووەم: بە کۆمەڵ (Batch Processing)
     elif input_mode == "فایلی ZIP پێکەوە (چەندین بەش پێکەوە - Batch)" and uploaded_zip:
         with zipfile.ZipFile(uploaded_zip, "r") as in_zip:
             chapters_dict = {}
             for file_path in in_zip.namelist():
-                # فلتەرکردنی فۆڵدەرەکان و فایلە شاردراوەکانی سیستەم
                 if file_path.endswith('/') or '__MACOSX' in file_path or file_path.startswith('.'):
                     continue
                 
-                # 🛑 چارەسەری سەرەکی: دڵنیابوونەوە لەوەی فایلەکە بە ڕاستی وێنەیە
                 if not file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
                     continue
-                
+                    
                 parts = file_path.split('/')
                 ch_name = parts[-2] if len(parts) > 1 else "General_Pages"
                 if ch_name not in chapters_dict:
@@ -358,10 +339,9 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                         images = []
                         for path in sorted_paths:
                             with in_zip.open(path) as f:
-                                # خوێندنەوەی بێ کێشەی وێنەکە بۆ ناو میمۆری
                                 img_data = io.BytesIO(f.read())
                                 img = Image.open(img_data)
-                                img.load()  
+                                img.load()
                                 images.append(img)
                         
                         output_parts, _ = process_single_chapter(
