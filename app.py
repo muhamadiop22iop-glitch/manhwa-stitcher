@@ -7,10 +7,10 @@ import numpy as np
 import streamlit as st
 from PIL import Image, ImageDraw
 
-# ١. گۆڕینی ناونیشانی تاگی سەرەوەی وێبەکە
+# ١. ناونیشانی تاگی سەرەوەی وێبەکە
 st.set_page_config(page_title="ئامڕازەكانی مانهوای كوردسەبتایتڵ", page_icon="📜", layout="centered")
 
-# ٢. ستایلێکی کوردی و مۆدێرن بۆ ڕووکاری سایتەکە
+# ٢. ستایلی ڕووکاری سایتەکە
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: white; }
@@ -82,7 +82,7 @@ def process_single_chapter(images, max_split_height, output_format, jpeg_quality
         if enable_watermark and watermark_image:
             if watermark_distribution == "لەسەر ١٠ لاپەڕە بە هەڕەمەکی":
                 wm_indices = set(random.sample(range(num_pages), min(10, num_pages)))
-            elif watermark_distribution == "لەسەر ٢٠ لاپەڕە بە هەڕەمەکی":
+            elif watermark_distribution == "لەسەر ٢0 لاپەڕە بە هەڕەمەکی":
                 wm_indices = set(random.sample(range(num_pages), min(20, num_pages)))
             else:
                 wm_indices = set(range(num_pages))
@@ -174,7 +174,7 @@ if os.path.exists("logo_black.png"):
     with col_logo:
         st.image("logo_black.png", use_container_width=True)
 
-# ٣. گۆڕینی ناونیشانی ناوبەرنامەکە لە سەرەوە
+# ٣. ناونیشانی سەرەکی پڕۆژەکە
 st.title("📜 ئامڕازەكانی مانهوای كوردسەبتایتڵ")
 st.write("وەشانی نوێ: پشتگیری مۆدی مانگا بۆ یەک بەش یان بە کۆمەڵ.")
 
@@ -288,7 +288,8 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                 st.image(preview_img, caption="Crop Lines")
 
         st.success("تەواو! بەشەکە بە سەرکەوتوویی ئامادەکرا.")
-        st.download_button(label="📥 داگرتنی بەشەکە (ZIP)", data=final_zip_buffer.getvalue(), file_name="manga_chapter.zip", mime="application/zip")
+        # زیادکردنی bkey ناوازە لێرەدا
+        st.download_button(label="📥 داگرتنی بەشەکە (ZIP)", data=final_zip_buffer.getvalue(), file_name="manga_chapter.zip", mime="application/zip", key="download_single_btn")
 
     elif input_mode == "فایلی ZIP پێکەوە (چەندین بەش پێکەوە - Batch)" and uploaded_zip:
         with zipfile.ZipFile(uploaded_zip, "r") as in_zip:
@@ -304,38 +305,39 @@ if st.button("🚀 دەستپێکردنی پڕۆسە"):
                     chapters_dict[ch_name] = []
                 chapters_dict[ch_name].append(file_path)
             
-                if chapters_dict:
-                    progress_bar = st.progress(0.0)
-                    ch_keys = list(chapters_dict.keys())
-                    
-                    with zipfile.ZipFile(final_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
-                        for ch_idx, ch_name in enumerate(ch_keys):
-                            st.write(f"Processing: `{ch_name}` ...")
-                            sorted_paths = sorted(chapters_dict[ch_name], key=natural_sort_key)
-                            images = []
-                            for path in sorted_paths:
-                                with in_zip.open(path) as f:
-                                    img_data = io.BytesIO(f.read())
-                                    img = Image.open(img_data)
-                                    img.load()
-                                    images.append(img)
-                            
-                            output_parts, _ = process_single_chapter(
-                                images, max_split_height, output_format, jpeg_quality, 
-                                no_crop, enable_watermark, watermark_image, watermark_count, mode_2in1, credit_image,
-                                is_manga_mode, watermark_distribution
-                            )
-                            
-                            for idx, part in enumerate(output_parts):
-                                img_byte_arr = io.BytesIO()
-                                if save_format == "JPEG":
-                                    part.convert("RGB").save(img_byte_arr, format=save_format, quality=jpeg_quality)
-                                else:
-                                    part.save(img_byte_arr, format=save_format)
-                                out_zip.writestr(f"{ch_name}/{file_prefix}_{idx+1:02d}.{ext}", img_byte_arr.getvalue())
-                            progress_bar.progress((ch_idx + 1) / len(ch_keys))
-                    
-                    st.success("هەموو بەشەکان بە سەرکەوتوویی ڕێکخران!")
-                    st.download_button(label="📥 داگرتنی هەموو بەشەکان (Batch ZIP)", data=final_zip_buffer.getvalue(), file_name="kurdsubtitle_manga_batch.zip", mime="application/zip")
-                else:
-                    st.error("No valid images found.")
+            if chapters_dict:
+                progress_bar = st.progress(0.0)
+                ch_keys = list(chapters_dict.keys())
+                
+                with zipfile.ZipFile(final_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
+                    for ch_idx, ch_name in enumerate(ch_keys):
+                        st.write(f"Processing: `{ch_name}` ...")
+                        sorted_paths = sorted(chapters_dict[ch_name], key=natural_sort_key)
+                        images = []
+                        for path in sorted_paths:
+                            with in_zip.open(path) as f:
+                                img_data = io.BytesIO(f.read())
+                                img = Image.open(img_data)
+                                img.load()
+                                images.append(img)
+                        
+                        output_parts, _ = process_single_chapter(
+                            images, max_split_height, output_format, jpeg_quality, 
+                            no_crop, enable_watermark, watermark_image, watermark_count, mode_2in1, credit_image,
+                            is_manga_mode, watermark_distribution
+                        )
+                        
+                        for idx, part in enumerate(output_parts):
+                            img_byte_arr = io.BytesIO()
+                            if save_format == "JPEG":
+                                part.convert("RGB").save(img_byte_arr, format=save_format, quality=jpeg_quality)
+                            else:
+                                part.save(img_byte_arr, format=save_format)
+                            out_zip.writestr(f"{ch_name}/{file_prefix}_{idx+1:02d}.{ext}", img_byte_arr.getvalue())
+                        progress_bar.progress((ch_idx + 1) / len(ch_keys))
+                
+                st.success("هەموو بەشەکان بە سەرکەوتوویی ڕێکخران!")
+                # زیادکردنی key ناوازە لێرەدا بۆ چارەسەری ئیرۆرەکە
+                st.download_button(label="📥 داگرتنی هەموو بەشەکان (Batch ZIP)", data=final_zip_buffer.getvalue(), file_name="kurdsubtitle_manga_batch.zip", mime="application/zip", key="download_batch_btn")
+            else:
+                st.error("No valid images found.")
